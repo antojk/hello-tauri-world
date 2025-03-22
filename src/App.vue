@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import DrawingCanvas from "./components/DrawingCanvas.vue";
 
 interface Point {
-  x: Number,
-  y: Number
+  x: number,
+  y: number
 }
 
 interface Rectangle {
@@ -12,85 +13,114 @@ interface Rectangle {
   bottom_right: Point
 }
 
-const greetMsg = ref("");
-const name = ref("");
-const top_left_x = ref(0);
-const top_left_y = ref(0);
-const bottom_right_y = ref(0);
-const bottom_right_x = ref(0);
+interface Circle {
+  center: Point,
+  radius: number
+}
+
+interface Polygon {
+  points: Point[]
+}
+
+type ShapeType = 'rectangle' | 'circle' | 'polygon';
+
 const area = ref(0);
 const errMessage = ref("");
-
-
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
-}
+const currentShape = ref<Rectangle | Circle | Polygon>({
+  top_left: { x: 0, y: 0 },
+  bottom_right: { x: 0, y: 0 }
+});
+const currentShapeType = ref<ShapeType>('rectangle');
+const gridSize = ref(20); // Size of grid cells
 
 async function calc_area() {
   try {
-    const aRect: Rectangle = { top_left: { x: top_left_x.value, y: top_left_y.value }, bottom_right: { x: bottom_right_x.value, y: bottom_right_y.value } };
-    area.value = await invoke('calc_area', { target: aRect });
+    if (currentShapeType.value === 'rectangle') {
+      const rect = currentShape.value as Rectangle;
+      // Convert grid coordinates to coordinate system units
+      const normalizedRect: Rectangle = {
+        top_left: {
+          x: Math.round(rect.top_left.x / gridSize.value),
+          y: Math.round(-rect.top_left.y / gridSize.value) // Flip Y axis
+        },
+        bottom_right: {
+          x: Math.round(rect.bottom_right.x / gridSize.value),
+          y: Math.round(-rect.bottom_right.y / gridSize.value) // Flip Y axis
+        }
+      };
+      
+      // Call Rust backend for rectangle area calculation
+      area.value = await invoke('calc_area', { target: normalizedRect });
+    } else if (currentShapeType.value === 'circle') {
+      // Currently calculated in frontend, but can be replaced with Rust backend call
+      const circle = currentShape.value as Circle;
+      area.value = Math.PI * Math.pow(circle.radius / gridSize.value, 2);
+    } else if (currentShapeType.value === 'polygon') {
+      // Currently calculated in frontend, but can be replaced with Rust backend call
+      const polygon = currentShape.value as Polygon;
+      if (polygon.points.length < 3) {
+        throw new Error("A polygon needs at least 3 points");
+      }
+      
+      // Calculate polygon area using Shoelace formula
+      let polygonArea = 0;
+      const points = polygon.points;
+      const n = points.length;
+      
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        polygonArea += points[i].x * points[j].y;
+        polygonArea -= points[j].x * points[i].y;
+      }
+      
+      area.value = Math.abs(polygonArea) / 2 / (gridSize.value * gridSize.value);
+    }
+    
+    errMessage.value = ""; // Clear any previous error
   } catch (e) {
-    errMessage.value = JSON.stringify(e);
+    errMessage.value = e instanceof Error ? e.message : JSON.stringify(e);
   }
+}
+
+function handleShapeUpdate(shape: Rectangle | Circle | Polygon, type: ShapeType) {
+  currentShape.value = shape;
+  currentShapeType.value = type;
+  
+  // Automatically calculate area when shape changes
+  calc_area();
 }
 </script>
 
 <template>
   <main class="container">
-    <h1>Welcome to Tauri + Vue. The Grand Journey Starts here!</h1>
-
-    <div class="row">
-      <a href="https://vitejs.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
+    <h1>Shape Drawing & Area Calculator</h1>
+    
+    <!-- Drawing Canvas -->
+    <div class="canvas-section">
+      <DrawingCanvas 
+        :grid-size="gridSize"
+        :initial-shape="currentShape"
+        @shape-updated="handleShapeUpdate" 
+      />
     </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
-
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
-
-    <form class="row" @submit.prevent="calc_area">
-      <input id="rect-top-x" v-model="top_left_x" placeholder="Enter the top left x coord! " />
-      <input id="rect-top-y" v-model="top_left_y" placeholder="Enter the top left y coord! " />
-      <input id="rect-bottom-x" v-model="bottom_right_x" placeholder="Enter the bottom right x coord! " />
-      <input id="rect-bottom-y" v-model="bottom_right_y" placeholder="Enter the bottom right y coord! " />
-      <button type="submit">Calculate Area</button>
-    </form>
-    <p>{{ area }}</p>
-    <p>{{ errMessage }}</p>
+    
+    <div class="result-section">
+      <h3>Results:</h3>
+      <p class="result">Area: <span class="highlight">{{ area.toFixed(2) }}</span> square units</p>
+      <p v-if="errMessage" class="error">{{ errMessage }}</p>
+      <p class="note">Note: Rectangle calculations are performed by the Rust backend. Circle and polygon calculations are currently done in the frontend.</p>
+    </div>
   </main>
 </template>
 
-<style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
-</style>
 <style>
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
-
   color: #0f0f0f;
   background-color: #f6f6f6;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -100,77 +130,58 @@ async function calc_area() {
 
 .container {
   margin: 0;
-  padding-top: 10vh;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
 h1 {
   text-align: center;
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 
-input,
-button {
+.canvas-section {
+  flex: 1;
+  display: flex;
+  min-height: 0; /* Important for flexbox to respect children's sizes */
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-button {
-  cursor: pointer;
+.result-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
 }
 
-button:hover {
-  border-color: #396cd8;
+.result {
+  font-size: 1.2em;
 }
 
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
+.highlight {
+  font-weight: bold;
+  color: #2e7d32;
 }
 
-input,
-button {
-  outline: none;
+.error {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
 }
 
-#greet-input {
-  margin-right: 5px;
+.note {
+  font-style: italic;
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -178,19 +189,22 @@ button {
     color: #f6f6f6;
     background-color: #2f2f2f;
   }
-
-  a:hover {
-    color: #24c8db;
+  
+  .result-section {
+    background-color: #263238;
+    border-left-color: #4caf50;
   }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
+  
+  .highlight {
+    color: #81c784;
   }
-
-  button:active {
-    background-color: #0f0f0f69;
+  
+  .error {
+    background-color: #311b1b;
+  }
+  
+  .note {
+    color: #aaa;
   }
 }
 </style>
