@@ -59,130 +59,41 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="shape-menu">
-    <div class="menu-section">
-      <h3 class="menu-title">Shapes</h3>
-      <div class="shape-buttons">
-        <button 
-          v-for="shape in shapes" 
-          :key="shape.id"
-          @click="selectShape(shape.id as ShapeType)" 
-          :class="{ active: selectedShape === shape.id }"
-          :title="shape.tooltip"
-          :aria-label="shape.label"
-        >
-          <span class="shape-icon">{{ shape.icon }}</span>
-          <span class="shape-label">{{ shape.label }}</span>
-        </button>
-      </div>
-    </div>
+  <div class="bg-gray-100 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-700 p-4 w-20 flex flex-col gap-4">
+    <h3 class="text-xs font-semibold text-center uppercase text-gray-600 dark:text-gray-400 mb-2">Shapes</h3>
     
-    <div class="menu-section">
+    <div class="flex flex-col gap-3">
       <button 
-        @click="resetCanvas" 
-        class="reset-btn" 
-        title="Reset Canvas (Esc)"
-        aria-label="Reset Canvas"
+        v-for="shape in shapes" 
+        :key="shape.id"
+        @click="selectShape(shape.id as ShapeType)" 
+        :class="{ 
+          'bg-primary-500 text-white border-primary-600': selectedShape === shape.id,
+          'bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600': selectedShape !== shape.id
+        }"
+        class="w-12 h-12 flex flex-col items-center justify-center rounded mx-auto
+               border border-gray-300 dark:border-gray-700 transition-colors duration-200"
+        :title="shape.tooltip"
+        :aria-label="shape.label"
       >
-        <span class="reset-icon">↺</span>
-        <span class="reset-label">Reset</span>
+        <span class="text-xl mb-1">{{ shape.icon }}</span>
+        <span class="text-xs">{{ shape.label }}</span>
       </button>
     </div>
+    
+    <!-- Spacer to push reset button to the bottom -->
+    <div class="flex-grow"></div>
+    
+    <button 
+      @click="resetCanvas" 
+      class="w-12 h-12 flex flex-col items-center justify-center rounded mx-auto
+             bg-red-500 hover:bg-red-600 text-white border border-red-600
+             transition-colors duration-200"
+      title="Reset Canvas (Esc)"
+      aria-label="Reset Canvas"
+    >
+      <span class="text-xl mb-1">↺</span>
+      <span class="text-xs">Reset</span>
+    </button>
   </div>
 </template>
-
-<style scoped>
-.shape-menu {
-  background-color: #f5f5f5;
-  border-right: 1px solid #ccc;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 16px 8px;
-  width: 80px;
-}
-
-.menu-section {
-  margin-bottom: 20px;
-}
-
-.menu-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin: 0 0 8px;
-  text-align: center;
-  text-transform: uppercase;
-  color: #666;
-}
-
-.shape-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-button {
-  background-color: transparent;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  transition: all 0.2s;
-  width: 100%;
-}
-
-button:hover {
-  background-color: #e0e0e0;
-}
-
-button.active {
-  background-color: #2196F3;
-  color: white;
-  border-color: #1976D2;
-}
-
-.shape-icon, .reset-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
-}
-
-.shape-label, .reset-label {
-  font-size: 10px;
-}
-
-.reset-btn {
-  background-color: #f44336;
-  color: white;
-  border-color: #d32f2f;
-  margin-top: auto;
-}
-
-.reset-btn:hover {
-  background-color: #d32f2f;
-}
-
-@media (prefers-color-scheme: dark) {
-  .shape-menu {
-    background-color: #333;
-    border-color: #444;
-  }
-  
-  .menu-title {
-    color: #aaa;
-  }
-  
-  button {
-    background-color: #3a3a3a;
-    border-color: #555;
-    color: #eee;
-  }
-  
-  button:hover {
-    background-color: #444;
-  }
-}
-</style>

@@ -1,10 +1,9 @@
-\<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, reactive, watch, onUnmounted, computed } from 'vue';
 import ShapeMenu from './ShapeMenu.vue';
 import GraphGrid from './GraphGrid.vue';
 import DrawingArea from './DrawingArea.vue';
 import PropertiesPanel from './PropertiesPanel.vue';
-import ResizablePanel from '../ResizablePanel.vue';
 import type { Shape, ShapeType, GridSettings, Rectangle, Circle, Polygon } from '../../types/shapes';
 import { UNIT_CONVERSION_FACTORS } from '../../utils/measurementUnits';
 
@@ -150,19 +149,20 @@ watch(() => props.initialShapeType, (newVal) => {
 </script>
 
 <template>
-  <div class="drawing-canvas-container" ref="containerRef">
-    <div class="canvas-layout">
+  <div class="relative h-full w-full overflow-hidden" ref="containerRef">
+    <div class="flex h-full w-full">
       <!-- Shape Menu (Left Side) -->
       <ShapeMenu
         :selected-shape="currentShapeType"
         @select-shape="handleSelectShape"
         @reset-canvas="handleResetCanvas"
+        class="h-full"
       />
       
       <!-- Main Canvas Area (Center) -->
-      <div class="canvas-area">
+      <div class="flex-1 relative">
         <!-- Canvas Wrapper (maintains position context for overlays) -->
-        <div class="canvas-wrapper">
+        <div class="relative w-full h-full">
           <!-- Graph Grid Layer -->
           <GraphGrid
             :canvas-width="canvasWidth"
@@ -183,28 +183,28 @@ watch(() => props.initialShapeType, (newVal) => {
         </div>
       </div>
       
-      <!-- Properties Panel (Right Side) -->
-      <div class="properties-container" v-if="showPropertiesPanel">
-        <ResizablePanel
-          position="left"
-          resize-direction="horizontal"
-          :initial-width="250"
-          :min-width="200"
-          :max-width="400"
-        >
-          <PropertiesPanel
-            :grid-settings="gridSettings"
-            :current-shape="currentShape"
-            :current-shape-type="currentShapeType"
-            :area="area"
-            @update-grid-settings="handleUpdateGridSettings"
-          />
-        </ResizablePanel>
+      <!-- Properties Panel Overlay (Right Side) -->
+      <div 
+        class="absolute top-0 right-0 h-full transition-transform duration-300 ease-in-out transform z-10"
+        :class="showPropertiesPanel ? 'translate-x-0' : 'translate-x-full'"
+      >
+        <PropertiesPanel
+          :grid-settings="gridSettings"
+          :current-shape="currentShape"
+          :current-shape-type="currentShapeType"
+          :area="area"
+          @update-grid-settings="handleUpdateGridSettings"
+          class="h-full w-64 bg-white dark:bg-gray-800 shadow-lg border-l border-gray-300 dark:border-gray-700"
+        />
       </div>
       
       <!-- Toggle Button for Properties Panel -->
       <button 
-        class="toggle-properties-btn" 
+        class="absolute top-1/2 right-0 transform -translate-y-1/2 bg-gray-100 dark:bg-gray-800 
+               border border-gray-300 dark:border-gray-700 border-r-0 rounded-l-md
+               w-6 h-16 flex items-center justify-center cursor-pointer z-20
+               text-lg font-bold transition-all duration-300"
+        :class="showPropertiesPanel ? 'right-64' : 'right-0'"
         @click="togglePropertiesPanel"
         :title="showPropertiesPanel ? 'Hide Properties' : 'Show Properties'"
       >
@@ -213,70 +213,3 @@ watch(() => props.initialShapeType, (newVal) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.drawing-canvas-container {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-}
-
-.canvas-layout {
-  display: flex;
-  width: 100%;
-  height: 100%;
-}
-
-.canvas-area {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.canvas-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.properties-container {
-  height: 100%;
-}
-
-.toggle-properties-btn {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  background-color: #f5f5f5;
-  border: 1px solid #ccc;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  width: 20px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  z-index: 100;
-}
-
-.toggle-properties-btn:hover {
-  background-color: #e0e0e0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .toggle-properties-btn {
-    background-color: #333;
-    border-color: #444;
-    color: #eee;
-  }
-  
-  .toggle-properties-btn:hover {
-    background-color: #444;
-  }
-}
-</style>

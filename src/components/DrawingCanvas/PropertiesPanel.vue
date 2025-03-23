@@ -80,7 +80,7 @@ const polygonDimensions = computed(() => {
   const points = polygon.points;
   
   if (points.length < 3) {
-    return { sides: points.length };
+    return { sides: points.length, perimeter: undefined };
   }
   
   // Calculate perimeter (sum of all sides)
@@ -128,20 +128,22 @@ function changeGridSize(event: Event) {
 </script>
 
 <template>
-  <div class="properties-panel">
-    <h3 class="panel-title">Properties</h3>
+  <div class="h-full overflow-y-auto p-4">
+    <h3 class="text-lg font-semibold mb-4 pb-2 border-b border-gray-300 dark:border-gray-700">Properties</h3>
     
     <!-- Grid Settings Section -->
-    <div class="panel-section">
-      <h4 class="section-title">Grid Settings</h4>
+    <div class="mb-6">
+      <h4 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Grid Settings</h4>
       
-      <div class="setting-row">
-        <label>Units:</label>
-        <div class="unit-selector">
+      <div class="flex justify-between items-center mb-2">
+        <label class="font-medium">Units:</label>
+        <div class="flex gap-1">
           <button 
             v-for="unit in measurementUnits" 
             :key="unit"
-            :class="{ active: gridSettings.unit === unit }"
+            class="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-700
+                   bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+            :class="{ 'bg-primary-500 text-white border-primary-600': gridSettings.unit === unit }"
             @click="changeUnit(unit)"
           >
             {{ unit }}
@@ -149,8 +151,8 @@ function changeGridSize(event: Event) {
         </div>
       </div>
       
-      <div class="setting-row">
-        <label>Grid Size:</label>
+      <div class="flex justify-between items-center mb-2">
+        <label class="font-medium">Grid Size:</label>
         <input 
           type="number" 
           min="1" 
@@ -158,108 +160,112 @@ function changeGridSize(event: Event) {
           step="1" 
           :value="gridSettings.gridSize" 
           @change="changeGridSize"
+          class="w-20 px-2 py-1 rounded border border-gray-300 dark:border-gray-700 
+                 bg-white dark:bg-gray-800 text-right"
         />
       </div>
       
-      <div class="setting-row checkbox-row">
-        <label>Show Grid:</label>
+      <div class="flex justify-between items-center mb-2">
+        <label class="font-medium">Show Grid:</label>
         <input 
           type="checkbox" 
           :checked="gridSettings.showGrid" 
           @change="toggleGrid"
+          class="h-4 w-4 text-primary-600 rounded"
         />
       </div>
       
-      <div class="setting-row checkbox-row">
-        <label>Snap to Grid:</label>
+      <div class="flex justify-between items-center mb-2">
+        <label class="font-medium">Snap to Grid:</label>
         <input 
           type="checkbox" 
           :checked="gridSettings.snapToGrid" 
           @change="toggleSnapToGrid"
+          class="h-4 w-4 text-primary-600 rounded"
         />
       </div>
     </div>
     
     <!-- Shape Properties Section -->
-    <div class="panel-section">
-      <h4 class="section-title">Shape Properties</h4>
+    <div class="mb-6">
+      <h4 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Shape Properties</h4>
       
       <!-- Rectangle Properties -->
       <template v-if="currentShapeType === 'rectangle' && isRectangle(currentShape) && rectangleDimensions">
-        <div class="setting-row">
-          <label>Type:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Type:</label>
           <span>Rectangle</span>
         </div>
         
-        <div class="setting-row">
-          <label>Top-Left:</label>
-          <span>{{ formatPoint(currentShape.top_left, gridSettings) }}</span>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Top-Left:</label>
+          <span class="text-right">{{ formatPoint(currentShape.top_left, gridSettings) }}</span>
         </div>
         
-        <div class="setting-row">
-          <label>Bottom-Right:</label>
-          <span>{{ formatPoint(currentShape.bottom_right, gridSettings) }}</span>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Bottom-Right:</label>
+          <span class="text-right">{{ formatPoint(currentShape.bottom_right, gridSettings) }}</span>
         </div>
         
-        <div class="setting-row">
-          <label>Width:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Width:</label>
           <span>{{ rectangleDimensions.width.toFixed(2) }} {{ gridSettings.unit }}</span>
         </div>
         
-        <div class="setting-row">
-          <label>Height:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Height:</label>
           <span>{{ rectangleDimensions.height.toFixed(2) }} {{ gridSettings.unit }}</span>
         </div>
         
-        <div class="setting-row">
-          <label>Perimeter:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Perimeter:</label>
           <span>{{ rectangleDimensions.perimeter.toFixed(2) }} {{ gridSettings.unit }}</span>
         </div>
       </template>
       
       <!-- Circle Properties -->
       <template v-else-if="currentShapeType === 'circle' && isCircle(currentShape) && circleDimensions">
-        <div class="setting-row">
-          <label>Type:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Type:</label>
           <span>Circle</span>
         </div>
         
-        <div class="setting-row">
-          <label>Center:</label>
-          <span>{{ formatPoint(currentShape.center, gridSettings) }}</span>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Center:</label>
+          <span class="text-right">{{ formatPoint(currentShape.center, gridSettings) }}</span>
         </div>
         
-        <div class="setting-row">
-          <label>Radius:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Radius:</label>
           <span>{{ circleDimensions.radius.toFixed(2) }} {{ gridSettings.unit }}</span>
         </div>
         
-        <div class="setting-row">
-          <label>Diameter:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Diameter:</label>
           <span>{{ circleDimensions.diameter.toFixed(2) }} {{ gridSettings.unit }}</span>
         </div>
         
-        <div class="setting-row">
-          <label>Circumference:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Circumference:</label>
           <span>{{ circleDimensions.circumference.toFixed(2) }} {{ gridSettings.unit }}</span>
         </div>
       </template>
       
       <!-- Polygon Properties -->
       <template v-else-if="currentShapeType === 'polygon' && isPolygon(currentShape) && polygonDimensions">
-        <div class="setting-row">
-          <label>Type:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Type:</label>
           <span>Polygon</span>
         </div>
         
-        <div class="setting-row">
-          <label>Sides:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Sides:</label>
           <span>{{ polygonDimensions.sides }}</span>
         </div>
         
-        <template v-if="polygonDimensions.sides >= 3 && 'perimeter' in polygonDimensions">
-          <div class="setting-row">
-            <label>Perimeter:</label>
+        <template v-if="polygonDimensions.sides >= 3 && polygonDimensions.perimeter !== undefined">
+          <div class="flex justify-between items-center mb-2">
+            <label class="font-medium">Perimeter:</label>
             <span>{{ polygonDimensions.perimeter.toFixed(2) }} {{ gridSettings.unit }}</span>
           </div>
         </template>
@@ -267,167 +273,33 @@ function changeGridSize(event: Event) {
         <div 
           v-for="(point, index) in currentShape.points" 
           :key="index" 
-          class="setting-row"
+          class="flex justify-between items-center mb-2"
         >
-          <label>Point {{ index + 1 }}:</label>
-          <span>{{ formatPoint(point, gridSettings) }}</span>
+          <label class="font-medium">Point {{ index + 1 }}:</label>
+          <span class="text-right text-sm">{{ formatPoint(point, gridSettings) }}</span>
         </div>
       </template>
       
       <!-- No shape or invalid state -->
       <template v-else>
-        <div class="setting-row">
-          <label>Type:</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="font-medium">Type:</label>
           <span>{{ currentShapeType }}</span>
         </div>
-        <div class="setting-row">
-          <span class="info-text">Draw a shape to see its properties</span>
+        <div class="flex justify-center items-center mb-2 py-2">
+          <span class="text-gray-500 dark:text-gray-400 italic">Draw a shape to see its properties</span>
         </div>
       </template>
     </div>
     
     <!-- Measurement Results Section -->
-    <div class="panel-section">
-      <h4 class="section-title">Measurements</h4>
+    <div class="mb-6">
+      <h4 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Measurements</h4>
       
-      <div class="setting-row result-row">
-        <label>Area:</label>
-        <span class="area-value">{{ formattedArea }}</span>
+      <div class="flex justify-between items-center mb-2 font-semibold">
+        <label class="font-medium">Area:</label>
+        <span class="text-green-700 dark:text-green-400">{{ formattedArea }}</span>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.properties-panel {
-  background-color: #f5f5f5;
-  border-left: 1px solid #ccc;
-  font-size: 0.9rem;
-  height: 100%;
-  overflow-y: auto;
-  padding: 16px;
-  width: 100%;
-}
-
-.panel-title {
-  border-bottom: 1px solid #ccc;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 16px;
-  padding-bottom: 8px;
-  text-align: center;
-}
-
-.panel-section {
-  margin-bottom: 24px;
-}
-
-.section-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin: 0 0 12px;
-  color: #666;
-}
-
-.setting-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  align-items: center;
-}
-
-.checkbox-row {
-  align-items: center;
-}
-
-.setting-row label {
-  flex: 0 0 40%;
-  font-weight: 500;
-}
-
-.setting-row span {
-  flex: 0 0 60%;
-  text-align: right;
-}
-
-.info-text {
-  color: #777;
-  font-style: italic;
-  text-align: center;
-  width: 100%;
-  padding: 8px 0;
-}
-
-.unit-selector {
-  display: flex;
-  gap: 4px;
-}
-
-.unit-selector button {
-  background-color: #e0e0e0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 4px 8px;
-  transition: all 0.2s;
-}
-
-.unit-selector button.active {
-  background-color: #2196F3;
-  color: white;
-  border-color: #1976D2;
-}
-
-input[type="number"] {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 4px 8px;
-  width: 80px;
-  text-align: right;
-}
-
-.result-row {
-  font-weight: 600;
-}
-
-.area-value {
-  color: #2e7d32;
-}
-
-@media (prefers-color-scheme: dark) {
-  .properties-panel {
-    background-color: #333;
-    border-color: #444;
-    color: #eee;
-  }
-  
-  .panel-title {
-    border-color: #555;
-  }
-  
-  .section-title {
-    color: #aaa;
-  }
-  
-  .info-text {
-    color: #aaa;
-  }
-  
-  .unit-selector button {
-    background-color: #444;
-    border-color: #555;
-    color: #eee;
-  }
-  
-  input[type="number"] {
-    background-color: #444;
-    border-color: #555;
-    color: #eee;
-  }
-  
-  .area-value {
-    color: #81c784;
-  }
-}
-</style>
