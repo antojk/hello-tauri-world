@@ -3,7 +3,7 @@ import { defineProps, defineEmits, onUnmounted } from 'vue';
 import type { ShapeType } from '../../types/shapes';
 
 const props = defineProps<{
-  selectedShape: ShapeType;
+  selectedShape: ShapeType;  // This prop name matches what's used in the template
 }>();
 
 const emit = defineEmits<{
@@ -68,8 +68,8 @@ onUnmounted(() => {
         :key="shape.id"
         @click="selectShape(shape.id as ShapeType)" 
         :class="{ 
-          'bg-primary-500 text-white border-primary-600': selectedShape === shape.id,
-          'bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600': selectedShape !== shape.id
+          'bg-primary-500 text-white border-primary-600': props.selectedShape === shape.id,
+          'bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600': props.selectedShape !== shape.id
         }"
         class="w-12 h-12 flex flex-col items-center justify-center rounded mx-auto
                border border-gray-300 dark:border-gray-700 transition-colors duration-200"

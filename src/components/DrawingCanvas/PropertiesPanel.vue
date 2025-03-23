@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { GridSettings, Shape, ShapeType, Point, Rectangle, Circle, Polygon, MeasurementUnit } from '../../types/shapes';
+import type { GridSettings, Shape, ShapeType, Rectangle, Circle, Polygon, MeasurementUnit } from '../../types/shapes';
 import { UNIT_CONVERSION_FACTORS, pixelsToUnit, formatWithUnit } from '../../utils/measurementUnits';
 import { formatPoint } from '../../utils/coordinates';
 
