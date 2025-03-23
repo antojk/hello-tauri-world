@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue';
+import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
 import type { Shape, ShapeType, Point, Rectangle, Circle, Polygon, GridSettings } from '../../types/shapes';
-import { canvasToGridPoint, mathToCanvas, formatPoint } from '../../utils/coordinates';
+import { canvasToGridPoint, mathToCanvas, snapToGrid, formatPoint } from '../../utils/coordinates';
 
 const props = defineProps<{
   width: number;
@@ -109,14 +109,14 @@ function startDrawing(event: MouseEvent) {
     x, y, props.width, props.height, props.gridSettings
   );
 
-  isDrawing.value = true;
-
   if (selectedShape.value === 'rectangle') {
+    isDrawing.value = true;
     currentRectangle.value = {
       top_left: { x: mathPoint.x, y: mathPoint.y },
       bottom_right: { x: mathPoint.x, y: mathPoint.y }
     };
   } else if (selectedShape.value === 'circle') {
+    isDrawing.value = true;
     currentCircle.value = {
       center: { x: mathPoint.x, y: mathPoint.y },
       radius: 0
@@ -124,28 +124,28 @@ function startDrawing(event: MouseEvent) {
   } else if (selectedShape.value === 'polygon') {
     if (!isDrawingPolygon.value) {
       // Start a new polygon
-      currentPolygon.value = { points: [{ x: mathPoint.x, y: mathPoint.y }] };
       isDrawingPolygon.value = true;
-      isDragging.value = true;
+      currentPolygon.value = { points: [{ x: mathPoint.x, y: mathPoint.y }] };
 
       // Add a temporary second point for dragging
       currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-    } else {
-      // Continue adding points to the polygon
-      if (isDragging.value) {
-        // If we were dragging, replace the temporary point with a fixed one
-        if (currentPolygon.value.points.length > 1) {
-          currentPolygon.value.points.pop(); // Remove the temporary drag point
-        }
-        currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-      } else {
-        // Start a new segment - add a fixed point
-        currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-      }
-
-      // Always add a temporary point that will follow the mouse for the next line segment
       isDragging.value = true;
-      currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
+    } else {
+      // Add a new fixed point to the polygon
+      if (currentPolygon.value.points.length > 0) {
+        // If we already have a temporary drag point, replace it
+        if (isDragging.value) {
+          // Replace the last point (which was a temp drag point) with the fixed point
+          currentPolygon.value.points[currentPolygon.value.points.length - 1] = { x: mathPoint.x, y: mathPoint.y };
+        } else {
+          // Otherwise, add a new fixed point
+          currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
+        }
+
+        // Add a new temporary point for dragging the next segment
+        currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
+        isDragging.value = true;
+      }
     }
   }
 
@@ -181,7 +181,7 @@ function updateDrawing(event: MouseEvent) {
     }
   }
 
-  // For polygon, update the last point even if not in official "drawing" mode
+  // For polygon, update the last point during dragging
   if (selectedShape.value === 'polygon' && isDrawingPolygon.value && isDragging.value) {
     if (currentPolygon.value.points.length > 0) {
       const lastIndex = currentPolygon.value.points.length - 1;
@@ -202,12 +202,13 @@ function finishDrawing() {
   } else if (selectedShape.value === 'circle' && isDrawing.value) {
     isDrawing.value = false;
     emit('shapeUpdated', currentCircle.value, 'circle');
-  } else if (selectedShape.value === 'polygon' && isDragging.value) {
-    // For polygon, we're no longer dragging but still drawing the polygon
-    isDragging.value = false;
-    isDrawing.value = false;
+  }
 
-    // Emit shape update to capture current partial polygon
+  // Note: We're NOT ending polygon drawing on mouse up - the polygon continues
+  // until the user double-clicks or presses Enter
+
+  // Just emit the current polygon state to keep the UI updated
+  if (selectedShape.value === 'polygon' && isDrawingPolygon.value) {
     emit('shapeUpdated', currentPolygon.value, 'polygon');
   }
 }
@@ -408,33 +409,36 @@ function drawShape() {
     // Draw points
     ctx.fillStyle = '#FF5722';
     points.forEach((point, index) => {
-      // Skip the temporary drag point
-      if (isDragging.value && index === points.length - 1) {
-        // Draw this point differently as it's a temp point
-        const canvasPoint = mathToCanvas(
-          point.x, point.y, props.width, props.height
-        );
-        ctx.beginPath();
-        ctx.arc(canvasPoint.x, canvasPoint.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 87, 34, 0.5)';
-        ctx.fill();
-        ctx.fillStyle = '#FF5722';  // Reset for next points
-        return;
-      }
+      // Draw the temp point differently if it's the last one during drag
+      const isLastPointDuringDrag = isDragging.value && index === points.length - 1;
 
       const canvasPoint = mathToCanvas(
         point.x, point.y, props.width, props.height
       );
+
       ctx.beginPath();
       ctx.arc(canvasPoint.x, canvasPoint.y, 4, 0, Math.PI * 2);
+
+      // Different color for the drag point
+      if (isLastPointDuringDrag) {
+        ctx.fillStyle = 'rgba(255, 87, 34, 0.5)';
+      } else {
+        ctx.fillStyle = '#FF5722';
+      }
+
       ctx.fill();
 
-      // Show coordinates
-      ctx.fillStyle = '#000';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(`${index + 1}: ${formatPoint(point, props.gridSettings)}`, canvasPoint.x + 5, canvasPoint.y - 5);
+      // Reset fill style
+      ctx.fillStyle = '#FF5722';
+
+      // Show coordinates for non-drag points
+      if (!isLastPointDuringDrag || !isDragging.value) {
+        ctx.fillStyle = '#000';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(`${index + 1}: ${formatPoint(point, props.gridSettings)}`, canvasPoint.x + 5, canvasPoint.y - 5);
+      }
     });
 
     // If we're in polygon drawing mode, show instructions
