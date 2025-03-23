@@ -171,7 +171,7 @@ function changeGridSize(event: Event) {
           type="checkbox" 
           :checked="gridSettings.showGrid" 
           @change="toggleGrid"
-          class="h-4 w-4 text-primary-600 rounded"
+          class="h-4 w-4 text-primary-600 rounded-sm"
         />
       </div>
       
@@ -181,7 +181,7 @@ function changeGridSize(event: Event) {
           type="checkbox" 
           :checked="gridSettings.snapToGrid" 
           @change="toggleSnapToGrid"
-          class="h-4 w-4 text-primary-600 rounded"
+          class="h-4 w-4 text-primary-600 rounded-sm"
         />
       </div>
     </div>

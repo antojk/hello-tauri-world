@@ -82,7 +82,7 @@ onUnmounted(() => {
     </div>
     
     <!-- Spacer to push reset button to the bottom -->
-    <div class="flex-grow"></div>
+    <div class="grow"></div>
     
     <button 
       @click="resetCanvas" 

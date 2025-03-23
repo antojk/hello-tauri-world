@@ -1,6 +1,140 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+@theme {
+  --z-index-behind: -1;
+
+  --color-primary-50: #e6f7ff;
+  --color-primary-100: #b3e0ff;
+  --color-primary-200: #80caff;
+  --color-primary-300: #4db3ff;
+  --color-primary-400: #1a9dff;
+  --color-primary-500: #0086e6;
+  --color-primary-600: #0069b3;
+  --color-primary-700: #004d80;
+  --color-primary-800: #00304d;
+  --color-primary-900: #00141f;
+
+  --color-secondary-50: #f0f9f4;
+  --color-secondary-100: #d0ebda;
+  --color-secondary-200: #b0ddc1;
+  --color-secondary-300: #90cfa7;
+  --color-secondary-400: #70c18e;
+  --color-secondary-500: #50b374;
+  --color-secondary-600: #308e5a;
+  --color-secondary-700: #206940;
+  --color-secondary-800: #104427;
+  --color-secondary-900: #001f0d;
+
+  --color-accent-50: #f7e6ff;
+  --color-accent-100: #e0b3ff;
+  --color-accent-200: #ca80ff;
+  --color-accent-300: #b34dff;
+  --color-accent-400: #9d1aff;
+  --color-accent-500: #8600e6;
+  --color-accent-600: #6900b3;
+  --color-accent-700: #4d0080;
+  --color-accent-800: #30004d;
+  --color-accent-900: #14001f;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+@utility app-container {
+  @apply flex flex-col h-screen;
+}
+
+@utility canvas-section {
+  @apply flex-1 flex relative min-h-0 rounded-lg overflow-hidden shadow-md;
+}
+
+@utility shape-menu {
+  @apply bg-gray-100 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-700 p-4 w-20 
+           flex flex-col gap-4;
+}
+
+@utility shape-btn {
+  @apply w-12 h-12 flex flex-col items-center justify-center rounded-sm
+           border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700
+           hover:bg-gray-100 dark:hover:bg-gray-600;
+
+  &.active {
+    @apply bg-primary-500 text-white border-primary-600;
+  }
+}
+
+@utility active {
+  &.shape-btn {
+    @apply bg-primary-500 text-white border-primary-600;
+  }
+
+  &.unit-btn {
+    @apply bg-primary-500 text-white border-primary-600;
+  }
+}
+
+@utility shape-icon {
+  @apply text-xl mb-1;
+}
+
+@utility shape-label {
+  @apply text-xs;
+}
+
+@utility reset-btn {
+  @apply w-12 h-12 flex flex-col items-center justify-center rounded-sm mt-auto
+           bg-red-500 text-white border-red-600
+           hover:bg-red-600;
+}
+
+@utility properties-panel {
+  @apply absolute right-0 top-0 h-full bg-white dark:bg-gray-800 shadow-lg
+           border-l border-gray-300 dark:border-gray-700 p-4
+           transform transition-transform duration-300 ease-in-out
+           w-64 overflow-y-auto;
+}
+
+@utility panel-title {
+  @apply text-lg font-semibold mb-4 pb-2 border-b border-gray-300 dark:border-gray-700;
+}
+
+@utility section-title {
+  @apply text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300;
+}
+
+@utility setting-row {
+  @apply flex justify-between items-center mb-2;
+}
+
+@utility unit-selector {
+  @apply flex gap-1;
+}
+
+@utility unit-btn {
+  @apply px-2 py-1 text-xs rounded-sm border border-gray-300 dark:border-gray-700
+           bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600;
+
+  &.active {
+    @apply bg-primary-500 text-white border-primary-600;
+  }
+}
 
 @layer base {
   html, body {
@@ -16,77 +150,6 @@
   }
   
   input[type="number"] {
-    @apply px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800;
-  }
-}
-
-@layer components {
-  .app-container {
-    @apply flex flex-col h-screen;
-  }
-  
-  .canvas-section {
-    @apply flex-1 flex relative min-h-0 rounded-lg overflow-hidden shadow-md;
-  }
-  
-  .shape-menu {
-    @apply bg-gray-100 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-700 p-4 w-20 
-           flex flex-col gap-4;
-  }
-  
-  .shape-btn {
-    @apply w-12 h-12 flex flex-col items-center justify-center rounded
-           border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700
-           hover:bg-gray-100 dark:hover:bg-gray-600;
-  }
-  
-  .shape-btn.active {
-    @apply bg-primary-500 text-white border-primary-600;
-  }
-  
-  .shape-icon {
-    @apply text-xl mb-1;
-  }
-  
-  .shape-label {
-    @apply text-xs;
-  }
-  
-  .reset-btn {
-    @apply w-12 h-12 flex flex-col items-center justify-center rounded mt-auto
-           bg-red-500 text-white border-red-600
-           hover:bg-red-600;
-  }
-  
-  .properties-panel {
-    @apply absolute right-0 top-0 h-full bg-white dark:bg-gray-800 shadow-lg
-           border-l border-gray-300 dark:border-gray-700 p-4
-           transform transition-transform duration-300 ease-in-out
-           w-64 overflow-y-auto;
-  }
-  
-  .panel-title {
-    @apply text-lg font-semibold mb-4 pb-2 border-b border-gray-300 dark:border-gray-700;
-  }
-  
-  .section-title {
-    @apply text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300;
-  }
-  
-  .setting-row {
-    @apply flex justify-between items-center mb-2;
-  }
-  
-  .unit-selector {
-    @apply flex gap-1;
-  }
-  
-  .unit-btn {
-    @apply px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-700
-           bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600;
-  }
-  
-  .unit-btn.active {
-    @apply bg-primary-500 text-white border-primary-600;
+    @apply px-2 py-1 rounded-sm border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800;
   }
 }
