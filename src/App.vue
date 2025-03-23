@@ -1,51 +1,31 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import DrawingCanvas from "./components/DrawingCanvas.vue";
-
-interface Point {
-  x: number,
-  y: number
-}
-
-interface Rectangle {
-  top_left: Point,
-  bottom_right: Point
-}
-
-interface Circle {
-  center: Point,
-  radius: number
-}
-
-interface Polygon {
-  points: Point[]
-}
-
-type ShapeType = 'rectangle' | 'circle' | 'polygon';
+import DrawingCanvas from "./components/DrawingCanvas/index.vue";
+import type { Shape, ShapeType, Rectangle, Circle, Polygon } from './types/shapes';
 
 const area = ref(0);
 const errMessage = ref("");
-const currentShape = ref<Rectangle | Circle | Polygon>({
+const currentShape = ref<Shape>({
   top_left: { x: 0, y: 0 },
   bottom_right: { x: 0, y: 0 }
 });
 const currentShapeType = ref<ShapeType>('rectangle');
-const gridSize = ref(20); // Size of grid cells
 
 async function calc_area() {
   try {
     if (currentShapeType.value === 'rectangle') {
       const rect = currentShape.value as Rectangle;
-      // Convert grid coordinates to coordinate system units
+      
+      // Convert grid coordinates to coordinate system units for Rust backend
       const normalizedRect: Rectangle = {
         top_left: {
-          x: Math.round(rect.top_left.x / gridSize.value),
-          y: Math.round(-rect.top_left.y / gridSize.value) // Flip Y axis
+          x: Math.round(rect.top_left.x),
+          y: Math.round(-rect.top_left.y) // Flip Y axis
         },
         bottom_right: {
-          x: Math.round(rect.bottom_right.x / gridSize.value),
-          y: Math.round(-rect.bottom_right.y / gridSize.value) // Flip Y axis
+          x: Math.round(rect.bottom_right.x),
+          y: Math.round(-rect.bottom_right.y) // Flip Y axis
         }
       };
       
@@ -54,7 +34,7 @@ async function calc_area() {
     } else if (currentShapeType.value === 'circle') {
       // Currently calculated in frontend, but can be replaced with Rust backend call
       const circle = currentShape.value as Circle;
-      area.value = Math.PI * Math.pow(circle.radius / gridSize.value, 2);
+      area.value = Math.PI * Math.pow(circle.radius, 2);
     } else if (currentShapeType.value === 'polygon') {
       // Currently calculated in frontend, but can be replaced with Rust backend call
       const polygon = currentShape.value as Polygon;
@@ -73,7 +53,7 @@ async function calc_area() {
         polygonArea -= points[j].x * points[i].y;
       }
       
-      area.value = Math.abs(polygonArea) / 2 / (gridSize.value * gridSize.value);
+      area.value = Math.abs(polygonArea) / 2;
     }
     
     errMessage.value = ""; // Clear any previous error
@@ -82,7 +62,7 @@ async function calc_area() {
   }
 }
 
-function handleShapeUpdate(shape: Rectangle | Circle | Polygon, type: ShapeType) {
+function handleShapeUpdate(shape: Shape, type: ShapeType) {
   currentShape.value = shape;
   currentShapeType.value = type;
   
@@ -98,8 +78,8 @@ function handleShapeUpdate(shape: Rectangle | Circle | Polygon, type: ShapeType)
     <!-- Drawing Canvas -->
     <div class="canvas-section">
       <DrawingCanvas 
-        :grid-size="gridSize"
         :initial-shape="currentShape"
+        :initial-shape-type="currentShapeType"
         @shape-updated="handleShapeUpdate" 
       />
     </div>
@@ -128,13 +108,19 @@ function handleShapeUpdate(shape: Rectangle | Circle | Polygon, type: ShapeType)
   -webkit-text-size-adjust: 100%;
 }
 
-.container {
+body, html {
   margin: 0;
-  padding: 2rem;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.container {
   display: flex;
   flex-direction: column;
   height: 100vh;
   box-sizing: border-box;
+  padding: 1rem;
 }
 
 h1 {
@@ -153,7 +139,7 @@ h1 {
 }
 
 .result-section {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   padding: 1rem;
   background-color: #e8f5e9;
   border-radius: 8px;

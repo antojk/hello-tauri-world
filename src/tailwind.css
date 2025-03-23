@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply h-full w-full m-0 p-0 overflow-hidden;
+  }
+  
+  body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+  }
+  
+  button {
+    @apply transition-colors duration-200;
+  }
+  
+  input[type="number"] {
+    @apply px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800;
+  }
+}
+
+@layer components {
+  .app-container {
+    @apply flex flex-col h-screen;
+  }
+  
+  .canvas-section {
+    @apply flex-1 flex relative min-h-0 rounded-lg overflow-hidden shadow-md;
+  }
+  
+  .shape-menu {
+    @apply bg-gray-100 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-700 p-4 w-20 
+           flex flex-col gap-4;
+  }
+  
+  .shape-btn {
+    @apply w-12 h-12 flex flex-col items-center justify-center rounded
+           border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700
+           hover:bg-gray-100 dark:hover:bg-gray-600;
+  }
+  
+  .shape-btn.active {
+    @apply bg-primary-500 text-white border-primary-600;
+  }
+  
+  .shape-icon {
+    @apply text-xl mb-1;
+  }
+  
+  .shape-label {
+    @apply text-xs;
+  }
+  
+  .reset-btn {
+    @apply w-12 h-12 flex flex-col items-center justify-center rounded mt-auto
+           bg-red-500 text-white border-red-600
+           hover:bg-red-600;
+  }
+  
+  .properties-panel {
+    @apply absolute right-0 top-0 h-full bg-white dark:bg-gray-800 shadow-lg
+           border-l border-gray-300 dark:border-gray-700 p-4
+           transform transition-transform duration-300 ease-in-out
+           w-64 overflow-y-auto;
+  }
+  
+  .panel-title {
+    @apply text-lg font-semibold mb-4 pb-2 border-b border-gray-300 dark:border-gray-700;
+  }
+  
+  .section-title {
+    @apply text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300;
+  }
+  
+  .setting-row {
+    @apply flex justify-between items-center mb-2;
+  }
+  
+  .unit-selector {
+    @apply flex gap-1;
+  }
+  
+  .unit-btn {
+    @apply px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-700
+           bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600;
+  }
+  
+  .unit-btn.active {
+    @apply bg-primary-500 text-white border-primary-600;
+  }
+}
