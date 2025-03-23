@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
-import type { Shape, ShapeType, Point, Rectangle, Circle, Polygon, GridSettings } from '../../types/shapes';
-import { canvasToGridPoint, mathToCanvas, snapToGrid, formatPoint } from '../../utils/coordinates';
+import { ref, onMounted, watch, onUnmounted } from 'vue';
+import type { Shape, ShapeType, Rectangle, Circle, Polygon, GridSettings } from '../../types/shapes';
+import { canvasToGridPoint, mathToCanvas, formatPoint } from '../../utils/coordinates';
 
 const props = defineProps<{
   width: number;
@@ -20,7 +20,6 @@ const isDrawing = ref(false);
 const isDragging = ref(false);
 const selectedShape = ref<ShapeType>(props.initialShapeType || 'rectangle');
 const isDrawingPolygon = ref(false);
-const lastMousePosition = ref<Point>({ x: 0, y: 0 });
 
 // Current shapes being drawn
 const currentRectangle = ref<Rectangle>({
@@ -101,56 +100,56 @@ function startDrawing(event: MouseEvent) {
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
 
-  // Save last mouse position
-  lastMousePosition.value = { x, y };
-
   // Convert to grid coordinates
   const mathPoint = canvasToGridPoint(
     x, y, props.width, props.height, props.gridSettings
   );
 
   if (selectedShape.value === 'rectangle') {
+    // Rectangle handling (unchanged)
     isDrawing.value = true;
     currentRectangle.value = {
       top_left: { x: mathPoint.x, y: mathPoint.y },
       bottom_right: { x: mathPoint.x, y: mathPoint.y }
     };
   } else if (selectedShape.value === 'circle') {
+    // Circle handling (unchanged)
     isDrawing.value = true;
     currentCircle.value = {
       center: { x: mathPoint.x, y: mathPoint.y },
       radius: 0
     };
   } else if (selectedShape.value === 'polygon') {
+    // Polygon handling - FIXED
     if (!isDrawingPolygon.value) {
-      // Start a new polygon
+      // Starting a new polygon
       isDrawingPolygon.value = true;
-      currentPolygon.value = { points: [{ x: mathPoint.x, y: mathPoint.y }] };
-
-      // Add a temporary second point for dragging
-      currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-      isDragging.value = true;
+      // Add the first fixed point and a temporary point for preview
+      currentPolygon.value = {
+        points: [
+          { x: mathPoint.x, y: mathPoint.y }, // First fixed point
+          { x: mathPoint.x, y: mathPoint.y }  // Temporary preview point
+        ]
+      };
     } else {
-      // Add a new fixed point to the polygon
-      if (currentPolygon.value.points.length > 0) {
-        // If we already have a temporary drag point, replace it
-        if (isDragging.value) {
-          // Replace the last point (which was a temp drag point) with the fixed point
-          currentPolygon.value.points[currentPolygon.value.points.length - 1] = { x: mathPoint.x, y: mathPoint.y };
-        } else {
-          // Otherwise, add a new fixed point
-          currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-        }
+      // Already drawing a polygon, add another point
+      const points = currentPolygon.value.points;
 
-        // Add a new temporary point for dragging the next segment
-        currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-        isDragging.value = true;
-      }
+      // The last point is always our "preview" point
+      // Replace it with the actual fixed position
+      points[points.length - 1] = { x: mathPoint.x, y: mathPoint.y };
+
+      // Add a new temporary point at the same position
+      // This will be moved during mousemove to preview the next segment
+      points.push({ x: mathPoint.x, y: mathPoint.y });
     }
   }
 
-  // Redraw the canvas
+  // Redraw and emit update
   drawShape();
+  if (selectedShape.value === 'polygon') {
+    emit('shapeUpdated', currentPolygon.value, 'polygon');
+  }
 }
 
 // Update the shape as the mouse moves
@@ -162,30 +161,28 @@ function updateDrawing(event: MouseEvent) {
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
 
-  // Update last mouse position
-  lastMousePosition.value = { x, y };
-
   // Convert to grid coordinates
   const mathPoint = canvasToGridPoint(
     x, y, props.width, props.height, props.gridSettings
   );
 
   if (isDrawing.value) {
+    // Handle rectangle and circle (unchanged)
     if (selectedShape.value === 'rectangle') {
       currentRectangle.value.bottom_right = { x: mathPoint.x, y: mathPoint.y };
     } else if (selectedShape.value === 'circle') {
-      // Calculate radius as distance from center to current point
       const dx = mathPoint.x - currentCircle.value.center.x;
       const dy = mathPoint.y - currentCircle.value.center.y;
       currentCircle.value.radius = Math.sqrt(dx * dx + dy * dy);
     }
   }
 
-  // For polygon, update the last point during dragging
-  if (selectedShape.value === 'polygon' && isDrawingPolygon.value && isDragging.value) {
-    if (currentPolygon.value.points.length > 0) {
-      const lastIndex = currentPolygon.value.points.length - 1;
-      currentPolygon.value.points[lastIndex] = { x: mathPoint.x, y: mathPoint.y };
+  // For polygon, update the last point (which is always the temporary one)
+  if (selectedShape.value === 'polygon' && isDrawingPolygon.value) {
+    const points = currentPolygon.value.points;
+    if (points.length > 0) {
+      // Update the temporary preview point
+      points[points.length - 1] = { x: mathPoint.x, y: mathPoint.y };
     }
   }
 
@@ -193,8 +190,9 @@ function updateDrawing(event: MouseEvent) {
   drawShape();
 }
 
-// Finish drawing when the mouse is released
-function finishDrawing() {
+// finishDrawing function - Handles mouseup events
+function finishDrawing(_event: MouseEvent) {
+  // For rectangle and circle, end drawing
   if (selectedShape.value === 'rectangle' && isDrawing.value) {
     isDrawing.value = false;
     normalizeRectangle();
@@ -204,27 +202,26 @@ function finishDrawing() {
     emit('shapeUpdated', currentCircle.value, 'circle');
   }
 
-  // Note: We're NOT ending polygon drawing on mouse up - the polygon continues
-  // until the user double-clicks or presses Enter
-
-  // Just emit the current polygon state to keep the UI updated
+  // CRITICAL FIX: For polygon, DO NOT end drawing on mouseup
+  // Just update the current state
   if (selectedShape.value === 'polygon' && isDrawingPolygon.value) {
     emit('shapeUpdated', currentPolygon.value, 'polygon');
   }
 }
 
-// Double click to finish polygon
+// handleDoubleClick function - Handles double-click to finish polygon
 function handleDoubleClick() {
   if (selectedShape.value === 'polygon' && isDrawingPolygon.value) {
-    // Complete the polygon - remove the last point if it's a temporary drag point
-    if (isDragging.value && currentPolygon.value.points.length > 0) {
-      currentPolygon.value.points.pop();
+    const points = currentPolygon.value.points;
+
+    // Remove the temporary preview point
+    if (points.length > 0) {
+      points.pop();
     }
 
-    // Only finalize if we have at least 3 points
-    if (currentPolygon.value.points.length >= 3) {
+    // Only finalize if we have at least 3 points for a valid polygon
+    if (points.length >= 3) {
       isDrawingPolygon.value = false;
-      isDragging.value = false;
       emit('shapeUpdated', currentPolygon.value, 'polygon');
     }
   }
@@ -535,8 +532,7 @@ defineExpose({
 
 <template>
   <canvas ref="canvasRef" class="drawing-area-canvas" :width="width" :height="height" @mousedown="startDrawing"
-    @mousemove="updateDrawing" @mouseup="finishDrawing" @mouseleave="finishDrawing"
-    @dblclick="handleDoubleClick"></canvas>
+    @mousemove="updateDrawing" @mouseup="finishDrawing" @dblclick="handleDoubleClick"></canvas>
 </template>
 
 <style scoped>

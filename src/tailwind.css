@@ -55,16 +55,55 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+  
+  html, body {
+    @apply h-full w-full m-0 p-0 overflow-hidden;
+  }
+  
+  body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
 }
 
+/* Application Layout utilities */
 @utility app-container {
-  @apply flex flex-col h-screen;
+  @apply flex flex-col h-screen p-4 box-border;
 }
 
 @utility canvas-section {
   @apply flex-1 flex relative min-h-0 rounded-lg overflow-hidden shadow-md;
 }
 
+@utility result-section {
+  @apply mt-4 p-4 bg-green-50 dark:bg-gray-800 rounded-lg border-l-4 border-green-500;
+}
+
+@utility result {
+  @apply text-lg;
+}
+
+@utility highlight {
+  @apply font-bold text-green-800 dark:text-green-400;
+}
+
+@utility error {
+  @apply text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400 p-2.5 rounded mt-2.5;
+}
+
+@utility note {
+  @apply italic text-sm text-gray-600 dark:text-gray-400 mt-1;
+}
+
+/* Shape drawing and properties utilities continue as before */
 @utility shape-menu {
   @apply bg-gray-100 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-700 p-4 w-20 
            flex flex-col gap-4;
@@ -133,23 +172,5 @@
 
   &.active {
     @apply bg-primary-500 text-white border-primary-600;
-  }
-}
-
-@layer base {
-  html, body {
-    @apply h-full w-full m-0 p-0 overflow-hidden;
-  }
-  
-  body {
-    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
-  }
-  
-  button {
-    @apply transition-colors duration-200;
-  }
-  
-  input[type="number"] {
-    @apply px-2 py-1 rounded-sm border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800;
   }
 }
