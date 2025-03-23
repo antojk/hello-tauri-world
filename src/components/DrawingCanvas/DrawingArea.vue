@@ -130,15 +130,22 @@ function startDrawing(event: MouseEvent) {
       
       // Add a temporary second point for dragging
       currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-    } else if (!isDragging.value) {
-      // Start a new segment - add a fixed point
-      currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
-      
-      // Add a temporary point that will follow the mouse
-      if (currentPolygon.value.points.length > 0) {
-        isDragging.value = true;
+    } else {
+      // Continue adding points to the polygon
+      if (isDragging.value) {
+        // If we were dragging, replace the temporary point with a fixed one
+        if (currentPolygon.value.points.length > 1) {
+          currentPolygon.value.points.pop(); // Remove the temporary drag point
+        }
+        currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
+      } else {
+        // Start a new segment - add a fixed point
         currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
       }
+      
+      // Always add a temporary point that will follow the mouse for the next line segment
+      isDragging.value = true;
+      currentPolygon.value.points.push({ x: mathPoint.x, y: mathPoint.y });
     }
   }
   
@@ -196,10 +203,11 @@ function finishDrawing() {
     isDrawing.value = false;
     emit('shapeUpdated', currentCircle.value, 'circle');
   } else if (selectedShape.value === 'polygon' && isDragging.value) {
-    // For polygon, we finish the current segment
+    // For polygon, we're no longer dragging but still drawing the polygon
     isDragging.value = false;
+    isDrawing.value = false;
     
-    // Still emit shape update to capture current partial polygon
+    // Emit shape update to capture current partial polygon
     emit('shapeUpdated', currentPolygon.value, 'polygon');
   }
 }
@@ -400,6 +408,20 @@ function drawShape() {
     // Draw points
     ctx.fillStyle = '#FF5722';
     points.forEach((point, index) => {
+      // Skip the temporary drag point
+      if (isDragging.value && index === points.length - 1) {
+        // Draw this point differently as it's a temp point
+        const canvasPoint = mathToCanvas(
+          point.x, point.y, props.width, props.height
+        );
+        ctx.beginPath();
+        ctx.arc(canvasPoint.x, canvasPoint.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 87, 34, 0.5)';
+        ctx.fill();
+        ctx.fillStyle = '#FF5722';  // Reset for next points
+        return;
+      }
+      
       const canvasPoint = mathToCanvas(
         point.x, point.y, props.width, props.height
       );
